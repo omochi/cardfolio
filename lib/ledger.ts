@@ -33,7 +33,7 @@ function validateRestore(raw: unknown): Ledger {
   const pairs=new Set<string>(); d.links.forEach(l=>{archiveValue(l.archived);get(d.cards,l.cardId);get(d.services,l.serviceId);const p=l.cardId+'|'+l.serviceId;if(pairs.has(p)) throw new Error('紐づけが重複しています。');pairs.add(p)});
   const gens=new Set<string>(); d.generations.forEach(g=>{get(d.cards,g.cardId);expiry(g.expiry);const p=g.cardId+'|'+g.expiry;if(gens.has(p))throw new Error('更新世代が重複しています。');gens.add(p)});
   const ps=new Set<string>(); d.progress.forEach(p=>{const l=get(d.links,p.linkId),g=get(d.generations,p.generationId);if(l.cardId!==g.cardId || !statuses.includes(p.status))throw new Error('進捗が不正です。');safe(p.memo,1000);const k=p.linkId+'|'+p.generationId;if(ps.has(k))throw new Error('進捗が重複しています。');ps.add(k)});
-  // Copy only known fields; never import operation keys or unknown properties.
+  // 既知のフィールドだけをコピーし、操作キーや未知のプロパティは取り込まない。
   return {cards:d.cards.map(({id,name,purpose,expiry,archived})=>({id,name,purpose,expiry,archived:archived??false})),services:d.services.map(({id,name,memo,archived})=>({id,name,memo,archived:archived??false})),links:d.links.map(({id,cardId,serviceId,archived})=>({id,cardId,serviceId,archived:archived??false})),generations:d.generations.map(({id,cardId,expiry})=>({id,cardId,expiry})),progress:d.progress.map(({linkId,generationId,status,memo})=>({linkId,generationId,status,memo})),operations:[]};
 }
 export async function mutate(owner:string, command:Record<string,unknown>) {

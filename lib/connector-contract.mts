@@ -17,7 +17,7 @@ export type ConnectorFailureStatus =
   | "tool_error"
   | "upstream_error"
   | "internal_error"
-  // Starter-only: no runtime capability or active local preview session.
+  // スターター専用：実行時の機能または有効なローカルプレビューセッションがない。
   | "binding_unavailable";
 
 export type ConnectorContent = {
@@ -25,7 +25,7 @@ export type ConnectorContent = {
   structuredContent?: Json;
 };
 
-// Matches Sites Dispatch's explicit invocation outcome, plus binding_unavailable.
+// Sites Dispatch の明示的な呼び出し結果と binding_unavailable に対応する。
 export type ConnectorResult =
   | {
       status: "success";
@@ -158,8 +158,8 @@ export function createConnectors(binding: ConnectorBinding | undefined) {
         };
       }
       try {
-        // Preserve the host's status, message, result and optional diagnostics.
-        // Do not replay a call after a transport failure: it may have completed.
+        // ホストの状態、メッセージ、結果、任意の診断情報を保持する。
+        // 通信失敗後は呼び出しを再実行しない。既に完了している可能性がある。
         return await binding.invoke(connectorId, actionName, args);
       } catch {
         return {

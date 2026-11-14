@@ -1,8 +1,8 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import binding from "virtual:sites-connector-preview";
 
-// Local-only RPC target. The Site entrypoint scopes it to each request; the Node
-// adapter relays each call to the owning agent.
+// ローカル専用の RPC 接続先。Site のエントリーポイントがリクエスト単位に制限し、
+// Node アダプターが各呼び出しを所有エージェントに中継する。
 export class ConnectorPreview extends WorkerEntrypoint {
   async getContext() {
     return binding.getContext?.() ?? { status: "binding_unavailable" };

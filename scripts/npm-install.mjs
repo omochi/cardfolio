@@ -15,9 +15,9 @@ import { fileURLToPath } from "node:url";
 
 const MAX_PACKAGES = 100_000;
 
-// npm reports tarball cache reads separately from registry metadata requests.
-// Count unique installed tarball URLs, not image seeds or network bytes. Require
-// complete coverage of npm's installed lock so older/partial logs stay unknown.
+// npm は tarball キャッシュの読み取りをレジストリのメタデータ要求と分けて報告する。
+// インストールされた tarball URL の一意な数を数える。イメージシードや通信量は数えない。
+// npm のインストール済みロック全体を対象とし、古いログや不完全なログは不明とする。
 export class NpmCacheProgress {
   entries = new Map();
   invalid = false;
@@ -35,7 +35,7 @@ export class NpmCacheProgress {
     );
     if (!match) return;
     const [, spec, status] = match;
-    // Pacote's direct content-cache log uses name@URL; HTTP cache logs use URL.
+    // Pacote の直接キャッシュログは name@URL、HTTP キャッシュログは URL を使う。
     const url = spec.replace(/^(?:@[^/]+\/)?[^@/]+@(?=https?:\/\/)/, "");
     if (
       url.length > 4096 ||
@@ -64,8 +64,8 @@ export class NpmCacheProgress {
       if (this.registry) {
         const locked = new URL(url);
         if (locked.hostname === "registry.npmjs.org") {
-          // Match npm/pacote's host rewrite and registry-fetch's path prefix
-          // using npm's effective configuration, never an arbitrary suffix.
+          // npm/pacote のホスト書き換えと registry-fetch のパス接頭辞を照合する。
+          // 任意の接尾辞ではなく、npm の実際の設定を使用する。
           candidates = [
             ...new Set([
               url,
@@ -86,7 +86,7 @@ export class NpmCacheProgress {
       )
         return {};
       for (const candidate of matches) observed.add(candidate);
-      // A corrupt direct-cache hit followed by a mirror fetch is a download.
+      // 破損した直接キャッシュのヒット後にミラーから取得した場合はダウンロードとする。
       if (matches.some((candidate) => this.entries.get(candidate)))
         downloaded++;
     }
@@ -157,7 +157,7 @@ export async function runNpmInstall(command, cacheSeed = "not_applicable") {
     const lines = createInterface({ input: child.stderr, crlfDelay: Infinity });
     lines.on("line", (line) => {
       progress.accept(line);
-      // Do not add package URLs to normal helper output just for telemetry.
+      // テレメトリーだけのためにパッケージ URL を通常のヘルパー出力へ追加しない。
       if (!line.startsWith("npm http ")) process.stderr.write(`${line}\n`);
     });
     let startError;
@@ -202,7 +202,7 @@ export async function runNpmInstall(command, cacheSeed = "not_applicable") {
         );
       }
     } catch {
-      // Telemetry must not change installation behavior.
+      // テレメトリーでインストール動作を変えてはならない。
     } finally {
       if (descriptor !== undefined) {
         try {

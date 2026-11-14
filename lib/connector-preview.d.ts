@@ -3,8 +3,8 @@ declare module "virtual:sites-connector-preview" {
   export default binding;
 }
 
-// Only the local preview uses an environment binding. Hosted Sites receive the
-// request-scoped capability through ctx.props.CONNECTORS in sites-worker.ts.
+// 環境バインディングを使うのはローカルプレビューだけ。ホストされた Sites は、
+// sites-worker.ts の ctx.props.CONNECTORS を通じてリクエスト単位の機能を受け取る。
 declare namespace Cloudflare {
   interface Env {
     CONNECTORS?: import("./connector-contract.mjs").ConnectorBinding;

@@ -1,15 +1,15 @@
-# Dependencies
+# 依存パッケージ
 /node_modules/
 /.pnp
 .pnp.*
-# Keep authored Yarn tooling if the project adopts Yarn.
+# Yarn を採用する場合は、プロジェクト独自のツールを保持する。
 /.yarn/*
 !/.yarn/patches/
 !/.yarn/plugins/
 !/.yarn/releases/
 !/.yarn/versions/
 
-# Generated builds and framework state
+# 生成されたビルドとフレームワークの状態
 /dist/
 /.next/
 /.vinext/
@@ -17,29 +17,29 @@
 next-env.d.ts
 *.tsbuildinfo
 
-# Test output
+# テスト出力
 /coverage/
 
-# Package-manager logs
+# パッケージマネージャーのログ
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Local environment and keys
+# ローカル環境と鍵
 .env*
 .dev.vars*
 *.pem
 
-# Checkout-local tool state
+# チェックアウト固有のツール状態
 /.wrangler/
 /.sites-runtime/
 
-# Workspace scaffolding and publication archives
+# ワークスペースの準備ファイルと公開用アーカイブ
 /.agents/
 /.codex/
 /outputs/
 /work/
 
-# OS metadata
+# OS のメタデータ
 .DS_Store

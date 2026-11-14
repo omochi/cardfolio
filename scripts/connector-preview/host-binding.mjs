@@ -8,12 +8,12 @@ import {
   sessionOptionsSchema,
 } from "./protocol.mjs";
 
-// Checks connector calls while the agent builds and tests a Site locally.
-// connector-preview-session.mjs uses this helper after the agent chooses the read
-// actions the Site may use. For each Site request, it checks that selection and
-// the session limits before asking the agent to make the actual tool call.
-// It also handles timeouts, shutdown, and which result fields reach the Site.
-// This runs in the agent's temporary session, not in the deployed Site.
+// エージェントが Site をローカルで構築・テストする間、コネクター呼び出しを確認する。
+// エージェントが Site に許可する読み取り操作を選択した後、
+// connector-preview-session.mjs がこのヘルパーを使う。各リクエストについて選択内容と
+// セッションの制限を確認してから、実際のツール呼び出しをエージェントに依頼する。
+// タイムアウト、終了処理、Site に返す結果フィールドも扱う。
+// これはエージェントの一時セッションで実行し、デプロイ済み Site では実行しない。
 const messages = {
   invalid_request: "This app request is invalid or too large.",
   binding_unavailable:
@@ -91,7 +91,7 @@ export function createPreviewBinding({ tools, ...options }) {
       } catch {
         return reply(failure("invalid_request"));
       }
-      // Recheck after reading the request; shutdown can happen while it streams.
+      // リクエストの読み込み後に再確認する。転送中に終了する場合があるため。
       if (ended.signal.aborted || Date.now() >= expiresAt)
         return reply(failure("binding_unavailable"));
       const invoke = grants.get(
@@ -105,8 +105,8 @@ export function createPreviewBinding({ tools, ...options }) {
       let onEnd;
       try {
         const result = await Promise.race([
-          // A timeout ends our wait, not the provider call. Count that work
-          // against concurrency until it settles, without blocking other slots.
+          // タイムアウトは待機を終えるだけで、プロバイダーの呼び出しは終了しない。
+          // 完了まで同時実行数に含めるが、他の枠は妨げない。
           Promise.resolve()
             .then(() => invoke(call.arguments))
             .then(publicResult)
@@ -146,8 +146,8 @@ export async function readBounded(request, limit) {
   if (!request.body) throw new Error("Missing body");
   const stream = Readable.fromWeb(request.body);
   try {
-    // raw-body owns byte limits and stream errors; strict decoding rejects
-    // malformed UTF-8 instead of silently changing the caller's arguments.
+    // バイト数の制限とストリームエラーは raw-body が扱う。厳密なデコードにより、
+    // 不正な UTF-8 を拒否し、呼び出し元の引数を黙って変更しない。
     return new TextDecoder("utf-8", { fatal: true }).decode(
       await getRawBody(stream, { limit }),
     );
@@ -160,11 +160,11 @@ function publicResult(result) {
   const parsed = resultSchema.safeParse(result);
   if (!parsed.success) return failure("upstream_error");
   result = parsed.data;
-  // Native tools return MCP results; convert once at the preview host boundary.
-  // Never accept provider-authored top-level status or transport metadata.
+  // ネイティブツールは MCP 結果を返す。プレビューホストとの境界で一度だけ変換する。
+  // プロバイダーが作成したトップレベルの状態や転送メタデータを受け入れない。
   const payload = {
     content: result.content,
-    // Like the hosted binding, preserve every JSON value, including null.
+    // ホストされたバインディングと同様に、null を含むすべての JSON 値を保持する。
     ...(result.structuredContent !== undefined
       ? { structuredContent: result.structuredContent }
       : {}),

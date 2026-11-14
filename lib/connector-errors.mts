@@ -3,7 +3,7 @@ import { z } from "zod/v4";
 /** Validate and project runtime results onto the public connector response. */
 export function connectorResponse(result: unknown): Response {
   try {
-    // Keep server-only parsing lazy so client recovery UI can tree-shake it out.
+    // クライアント側の復旧 UI から除去できるよう、サーバー専用の解析は遅延する。
     const requestId = z
       .string()
       .regex(/^[A-Za-z0-9._:-]{1,128}$/)
@@ -48,13 +48,13 @@ export function connectorResponse(result: unknown): Response {
         : failure;
     const parsed = schema.safeParse(result);
     if (parsed.success) {
-      // As in the binding contract, JSON status determines the outcome.
+      // バインディングの契約どおり、JSON の状態から結果を判定する。
       return Response.json(parsed.data, {
         headers: { "Cache-Control": "private, no-store" },
       });
     }
   } catch {
-    // Cyclic or otherwise non-serializable runtime values are also unconfirmed.
+    // 循環参照などでシリアライズできない実行時の値も未確定とする。
   }
   return Response.json(
     {
@@ -78,6 +78,6 @@ export function connectorErrorRecovery(
       action: { label: `Connect ${connectorName}`, href: reconnectHref },
     };
   }
-  // Other outcomes do not prove that consent is missing or that replay is safe.
+  // その他の結果は、同意の欠如や再実行の安全性を証明しない。
   return { message: error.message };
 }

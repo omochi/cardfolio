@@ -19,9 +19,9 @@ import { fileURLToPath } from "node:url";
 const MAX_PACKAGES = 100_000;
 const CACHE_SEEDS = new Set(["seed_used", "seed_unavailable", "seed_lockfile_mismatch", "decision_unavailable", "not_applicable"]);
 const STORE_STATES = new Set(["created", "seeded", "reused", "unavailable"]);
-// The caller may use operational status only for
-// initial-setup fallback; an established project always retains pnpm. Broad
-// fetch failures can include TLS/auth errors and stay fatal.
+// 呼び出し元が実行状況を利用できるのは
+// 初期セットアップの代替処理だけ。既存プロジェクトでは pnpm を維持する。
+// 取得失敗には TLS・認証エラーも含まれるため、致命的エラーのままとする。
 const OPERATIONAL_FAILURE_CODES = new Set([
   "ERR_PNPM_UNEXPECTED_STORE",
   "ERR_PNPM_UNEXPECTED_VIRTUAL_STORE",
@@ -36,8 +36,8 @@ const OPERATIONAL_FAILURE_CODES = new Set([
   "ERR_PNPM_FETCH_504",
 ]);
 
-// These are pnpm-reported package IDs, not an assertion about network bytes or
-// image-cache provenance. Do not interpret an installed-tree no-op as 100% reuse.
+// これは pnpm が報告したパッケージ ID であり、通信量や
+// イメージキャッシュの由来を示すものではない。変更なしを再利用率 100% と解釈しない。
 export class InstallProgress {
   constructor(project) {
     this.project = path.resolve(project);
@@ -94,7 +94,7 @@ function writeReport(fd, report) {
     writeSync(fd, body, 0, "utf8");
     ftruncateSync(fd, Buffer.byteLength(body));
   } catch {
-    // Optional telemetry must not change installation behavior or expose its path.
+    // 任意のテレメトリーはインストール動作を変えたり、パスを公開したりしてはならない。
   }
 }
 
@@ -141,8 +141,8 @@ async function openLock(filename, waitSeconds) {
 }
 
 async function holdInstallLocks(projectLock, sharedLock, waitSeconds) {
-  // The shell holds both leases through stdin. EOF (including caller exit)
-  // releases the same open file descriptions that flock locked in its child.
+  // シェルは標準入力を通じて両方のリースを保持する。EOF（呼び出し元終了を含む）で
+  // 子プロセスで flock がロックした同一のオープンファイル記述が解放される。
   const requests = createInterface({ input: process.stdin, crlfDelay: Infinity });
   const project = await openLock(projectLock, "0");
   let shared;
@@ -210,7 +210,7 @@ async function main() {
     const child = spawn(executable, args, { env, stdio: ["inherit", "pipe", "inherit"] });
     const lines = createInterface({ input: child.stdout, crlfDelay: Infinity });
     lines.on("line", (line) => showLine(line, progress, failure));
-    // timeout/exec owns the inherited group. Relaying would deliver signals twice.
+    // 継承されたグループは timeout/exec が所有する。中継するとシグナルが二重に届く。
     const signalHandlers = ["SIGINT", "SIGHUP", "SIGTERM"].map((signal) => {
       const handler = () => { receivedSignal ??= signal; };
       process.on(signal, handler);

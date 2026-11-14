@@ -1,27 +1,41 @@
 # Cardfolio
 
-A personal ledger of which cards are registered with which services, and the progress of confirming changes when a card is renewed. It does not update external services. Do not enter card numbers, security codes, PINs, passwords or other credentials, including in notes. Input filtering is only a safeguard and cannot reliably detect all secrets. The service names and notes are private too.
+どのカードをどの外部サービスに登録したか、カードの更新に伴う確認・変更がどこまで進んだかを管理する個人用台帳です。外部サービスの設定を自動で変更する機能はありません。
 
-Each person deploys an independent **private** ChatGPT Site and D1 database. This repository contains no account, Site ID, or real data. Cards and services have many-to-many links; progress is per link and expiry generation. A new expiry creates a new generation without overwriting previous progress. Edit card and service details from the side panel. Archive individual cards, services, or links instead of deleting them; their history is retained and they can be reactivated. Archived items cannot receive progress or new links. Completed statuses require explicit confirmation, but Cardfolio cannot verify an external service itself. Saving the ledger and changing an external service are independent; if saving fails, report the external result separately and retry recording after checking the current ledger.
+カード番号、セキュリティコード、暗証番号、パスワードなどの認証情報は、メモを含め入力しないでください。入力チェックは補助的なもので、すべての秘密情報を検出できるわけではありません。サービス名やメモも非公開情報として扱ってください。
 
-## Development
+各利用者が自分専用の**非公開 ChatGPT Site** と D1 データベースを用意します。このリポジトリにはアカウント情報、Site ID、実データを含めません。
 
-Node 24+ and npm are required for development and tests. `npm ci`, `npm run db:generate` after schema changes, and `npm run build`. To preview, use `npm run dev` and the Sites starter's local sign-in route. Local D1 needs the generated migration applied with the current Sites skill's local D1 instructions. Local and hosted databases are separate. `npm test` runs the focused ledger tests.
+カードとサービスは多対多で紐づけられます。更新状況は紐づけと有効期限の世代ごとに記録されます。新しい期限を登録しても、それ以前の更新状況は履歴として残ります。カード・サービス・紐づけは削除せず無効化でき、履歴を残したまま再有効化できます。無効化された項目には、新しい紐づけや更新状況を追加できません。
 
-## Deploy a new private Site with an AI assistant
+画面上部のナビゲーションから「カード」「サービス」「登録先・更新」「バックアップ」を選べます。カードやサービスの一覧から対象を選ぶと、詳細・編集画面へ進めます。更新済みの記録には確認が必要ですが、Cardfolio 自体が外部サービスの状態を検証することはできません。外部サービスの変更と台帳の保存は別の操作です。台帳の保存に失敗した場合は、外部サービス側の結果を別途伝え、現在の台帳を確認してから記録をやり直してください。
 
-1. Give the assistant this repository and request a **new private Site**. Have it read the latest Sites skill, especially storage, identity, Site MCP and publishing. Never copy another user's project ID or database.
-2. Install dependencies with the current Sites installer. Register a new Site with the Sites tools and record its returned project ID in the local `.openai/hosting.json` using the Sites helper. This ID is environment-specific: do not commit or publish that change to this reusable repository. D1 binding `DB` and `mcp` capability are declared. Retain them.
-3. Check the schema and committed Drizzle migrations; do not regenerate an existing migration. Build using the Sites build helper. Follow the Sites source packaging workflow, then deploy **private**. Hosted migrations are applied by Sites during deployment; verify status, including failures. Do not switch audience to public.
-4. Sign in as the owner, verify the empty ledger, add fictional test records, and verify writes and reloads. Confirm unauthenticated access is rejected and the site is private. Back up and remove test records by restoring an empty backup if appropriate. Connect the private app created for the Site via the current Sites MCP instructions; test `read_ledger` and a fictional write as the owner. Check another unauthorized identity cannot access it. The MCP endpoint also requires a Sites authenticated user ID; service bypass without identity is deliberately rejected.
-5. Only after those checks, use real service names. Never place real data or backup exports in Git, logs, or test fixtures. If identity or MCP access cannot be verified, stop and report the limitation.
+## 開発
 
-## Backups, restore, updates
+開発とテストには Node.js 24 以降と npm が必要です。
 
-Use **バックアップ** to download JSON. It contains private registration data; store it securely outside the repository. **復元** replaces the entire ledger, after confirmation and validation; take a current backup first. Restore is revision-checked, atomic and fails on concurrent changes. Test restore with fictional data in a separate private Site before relying on it. Operation IDs are not exported. No automatic backup is implied.
+```sh
+npm ci
+npm test
+npm run build
+```
 
-For upgrades, back up first, read release changes, apply source changes and append migrations without rewriting prior migration history. Follow current Sites packaging/deployment instructions, confirm deployment and migration status, then check access and records. A failed deployment can have applied migrations: inspect state before retrying. To recover data, restore a verified compatible backup via the UI. Preserve access restrictions and never share the deployment as a multi-user service.
+スキーマを変更した場合は `npm run db:generate` でマイグレーションを生成します。ローカルプレビューには `npm run dev` と Sites スターターのローカルサインインを使用します。ローカル D1 には、最新の Sites スキルの手順に従って生成済みマイグレーションを適用してください。ローカルとホスト先のデータベースは別です。
 
-## Limitations
+## AI アシスタントを使った新規の非公開 Site へのデプロイ
 
-No sync with payment providers, automatic discovery, or automatic proof of external updates. Names and notes cannot be reliably screened for all sensitive information. Deployment, actual D1 provisioning, owner-only access and MCP connectivity must be verified in each environment. Free-form notes may contain private information. Backups are plaintext.
+1. このリポジトリをアシスタントに渡し、**新しい非公開 Site** の作成を依頼します。最新の Sites スキル、特にストレージ・認証・Site MCP・公開手順を確認させてください。他の利用者のプロジェクト ID やデータベースは使い回しません。
+2. 最新の Sites インストーラーで依存関係を導入します。Sites ツールで新しい Site を登録し、返されたプロジェクト ID を Sites ヘルパーでローカルの `.openai/hosting.json` に設定します。この ID は環境固有なので、再利用するこのリポジトリにはコミット・公開しません。D1 の `DB` バインディングと `mcp` capability は維持してください。
+3. スキーマとコミット済みの Drizzle マイグレーションを確認します。既存のマイグレーションは再生成せず、Sites のビルド・ソース梱包手順に従い、**非公開**でデプロイします。ホスト先ではデプロイ時に Sites がマイグレーションを適用するため、失敗を含めて状態を確認してください。公開設定に変更してはいけません。
+4. 所有者としてサインインし、空の台帳を確認します。架空のテストデータを追加し、保存と再読み込みを確認してください。未認証アクセスが拒否されることと、サイトが非公開であることも確認します。必要に応じて、先に取得した空のバックアップを復元してテストデータを消します。最新の Sites MCP 手順に従って Site 用の非公開アプリを接続し、所有者として `read_ledger` と架空データの書き込みを試します。許可されていない別の ID からアクセスできないことも確認してください。MCP エンドポイントは Sites の認証済みユーザー ID を要求し、ID がないサービスアクセスは拒否します。
+5. 確認後に実際のサービス名を登録します。実データやバックアップを Git、ログ、テスト用データに含めないでください。認証または MCP のアクセスを検証できない場合は、作業を止めて未確認の点を報告してください。
+
+## バックアップ・復元・アップデート
+
+「バックアップと復元」画面から JSON をダウンロードできます。登録先などの非公開情報が含まれるため、リポジトリの外で安全に保管してください。「復元」は確認と入力検証の後、台帳全体を置き換えます。復元前に現在のバックアップを取得してください。復元ではリビジョンを確認し、同時更新があれば失敗します。運用前に、別の非公開 Site で架空データの復元を試してください。操作 ID はエクスポートされず、自動バックアップも行いません。
+
+アップデート時は先にバックアップし、変更内容を確認します。既存の履歴を書き換えずにマイグレーションを追加し、最新の Sites 梱包・デプロイ手順に従ってください。デプロイとマイグレーションの状態、アクセス制御、データを確認します。デプロイが失敗してもマイグレーションだけが適用されている場合があるため、再試行前に状態を確認してください。復旧時は互換性を確認したバックアップを画面から復元します。アクセス制限を維持し、他人と共用するサービスとして公開しないでください。
+
+## 制限事項
+
+決済事業者との同期、登録先の自動発見、外部サービス側の更新の自動確認はできません。名前やメモに含まれる秘密情報を完全には検出できません。デプロイ、D1 の実際の作成、所有者限定のアクセス、MCP 接続は各環境で検証する必要があります。バックアップは平文です。

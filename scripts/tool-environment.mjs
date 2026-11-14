@@ -1,7 +1,7 @@
 import path from "node:path";
 
-// Shared defaults for Vite and standalone Wrangler commands. Managed Linux
-// supplies its own checkout-local paths before these defaults are applied.
+// Vite と単独の Wrangler コマンドに共通する既定値。Managed Linux は、
+// この既定値の適用前にチェックアウト固有のパスを提供する。
 export function configureToolEnvironment(projectRoot) {
   const runtimeRoot =
     process.env.SITES_RUNTIME_ROOT || path.join(projectRoot, ".sites-runtime");

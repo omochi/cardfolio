@@ -25,7 +25,7 @@ store_state=unavailable
 report_store() {
   node "${script_dir}/pnpm-install.mjs" --report-store "${cache_seed}" "${store_scope}" "${store_state}" "${prepare_only}"
 }
-# Publish preparation failures too; the optional report never decides success.
+# 準備の失敗も通知する。任意のレポートで成否は決定しない。
 trap 'report_store || true' EXIT
 
 if [[ -n "${SITES_PNPM_BIN:-}" && -f "${SITES_PNPM_BIN}" && -r "${SITES_PNPM_BIN}" ]]; then
@@ -34,8 +34,8 @@ elif [[ "${require_shared}" == 1 ]]; then
   echo "[sites] the image-pinned pnpm is unavailable" >&2
   exit 69
 elif command -v corepack >/dev/null; then
-  # Corepack honors the established project's pin even when PATH has a different
-  # pnpm version. A bare pnpm is used only if Corepack is absent, then verified.
+  # PATH に異なるバージョンがあっても、Corepack は既存プロジェクトの指定を尊重する。
+  # Corepack がない場合だけ直接 pnpm を使い、その後バージョンを検証する。
   pnpm_command=(corepack pnpm)
 elif command -v pnpm >/dev/null; then
   pnpm_command=(pnpm)
@@ -50,8 +50,8 @@ if [[ "${HOME}" != "${runtime_root}/home" || -L "${private_store}" ]]; then
   echo "Dependency setup requires a project-owned writable home and pnpm store." >&2
   exit 78
 fi
-# A single Node process owns the regular-file descriptors for both leases.
-# Closing its input (including this shell exiting) releases the project lock.
+# 単一の Node プロセスが両方のリースの通常ファイル記述子を保持する。
+# 入力が閉じると、このシェルの終了時も含めプロジェクトのロックが解放される。
 coproc SITES_INSTALL_LOCKS {
   node "${script_dir}/pnpm-install.mjs" --hold-install-locks \
     "${runtime_root}/install.lock" "${SITES_PNPM_SHARED_STORE:-}.seed.lock" \
@@ -84,7 +84,7 @@ fi
 
 can_write_directory() {
   local probe
-  # access()/test -w can succeed even when a kernel sandbox denies a write.
+  # カーネルのサンドボックスが書き込みを拒否しても access()/test -w は成功する場合がある。
   probe="$(mktemp "${1}/.sites-store-probe.XXXXXX" 2>/dev/null)" || return 1
   rm -f -- "${probe}" 2>/dev/null
 }
@@ -99,8 +99,8 @@ release_shared_lock() {
 }
 
 acquire_shared_lock() {
-  # The Node holder opens this workspace-controlled entry with no-follow and
-  # nonblocking flags, then verifies a regular file before bounded flock.
+  # Node 側はワークスペース内のエントリーを no-follow と
+  # nonblocking で開き、通常ファイルを確認してから時間制限付き flock を行う。
   printf '%s\n' shared >&"${install_lock_input}"
   local status
   if read -r status <&"${install_lock_output}" && [[ "${status}" == locked ]]; then
@@ -115,8 +115,8 @@ shared_store="${SITES_PNPM_SHARED_STORE:-}"
 if [[ "${shared_store}" == "/workspace/.sites-runtime/pnpm-store" &&
       ! -L "${shared_store}" && ! -L "${shared_store%/*}" &&
       -d "${shared_store%/*/*}" ]]; then
-  # Normal Work already writes this owner's workspace. Narrower profiles must
-  # pass the actual create probe, without widening their permissions.
+  # 通常の Work は所有者のワークスペースに書き込める。より制限された環境では、
+  # 権限を広げず、実際の作成テストを通過する必要がある。
   if mkdir -p "${shared_store%/*}" 2>/dev/null &&
       can_write_directory "${shared_store%/*}" &&
       acquire_shared_lock; then
@@ -143,7 +143,7 @@ fi
 seed="${SITES_PNPM_CACHE_SEED:-}"
 cache_seed=seed_unavailable
 if [[ -d "${writable_store}" ]]; then
-  # Never merge a newer image seed into an existing mutable store.
+  # 既存の変更可能なストアに新しいイメージシードを混ぜない。
   store_state=reused
   cache_seed=not_applicable
   if [[ -f "${writable_store}/.sites-pnpm-seed-applied.json" ]]; then cache_seed=seed_used; fi
@@ -172,8 +172,8 @@ NODE
       "${SITES_PNPM_STORE_PREPARE_TIMEOUT:-60s}" bash -c \
       'cp -a --no-preserve=ownership "$1/." "$2/" && chmod -R u+rwX "$2"' _ "${seed}" "${seed_stage}" || exit 70
     cp "${seed}/.sites-pnpm-seed.json" "${seed_stage}/.sites-pnpm-seed-applied.json" || exit 70
-    # An ordinary pnpm command can initialize the store without our seed lock.
-    # Publish without replacing even an empty directory created by that command.
+    # 通常の pnpm コマンドはシード用ロックなしでストアを初期化する場合がある。
+    # そのコマンドが作成したディレクトリは、空でも置き換えずに公開する。
     mv -T --update=none "${seed_stage}" "${writable_store}" || exit 70
     if [[ -d "${seed_stage}" ]]; then
       if [[ -L "${writable_store}" || ! -d "${writable_store}" ]]; then exit 78; fi
@@ -197,8 +197,8 @@ report_store
 trap - EXIT
 if [[ "${prepare_only}" == 1 ]]; then exit 0; fi
 
-# Configuration travels with source without embedding an absolute machine path.
-# A later restricted session selects a private store before its frozen repair.
+# マシン固有の絶対パスを埋め込まず、設定をソースと共に持ち運ぶ。
+# 後続の制限付きセッションでは、固定設定での修復前に専用ストアを選ぶ。
 configured_store=.sites-runtime/pnpm-store
 if [[ "${store_scope}" == workspace ]]; then
   configured_store='${SITES_PNPM_SHARED_STORE:-.sites-runtime/pnpm-store}'
@@ -209,8 +209,8 @@ fi
 "${pnpm_command[@]}" config set store-dir "${configured_store}" --location project
 "${pnpm_command[@]}" config set cache-dir "${configured_store}/policy-cache" --location project
 
-# CI=true lets native pnpm install rebuild modules whose store moved, without a
-# prompt, --force, changing the lockfile, or translating the project into npm.
+# CI=true により、ストアが移動したモジュールを pnpm が再構築できる。
+# 確認プロンプト、--force、ロックファイルの変更、npm への変換は不要。
 CI=true timeout --signal=TERM --kill-after="${SITES_INSTALL_KILL_AFTER:-15s}" \
   "${SITES_INSTALL_TIMEOUT:-8m}" node "${script_dir}/pnpm-install.mjs" \
   "${cache_seed}" "${store_scope}" "${store_state}" "${writable_store}" "${pnpm_command[@]}"

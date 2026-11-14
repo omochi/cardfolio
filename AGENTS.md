@@ -1,3 +1,3 @@
-# Cardfolio development
+# Cardfolio の開発
 
-Cardfolio is a private single-owner ledger. Never add real card numbers, CVV, PIN, credentials, personal service records, Site IDs or production data to the repository or tests. Use synthetic data only. Changes to access control, restore, concurrency, idempotency or external-update claims require focused tests. Consult the current Sites skill for provisioning, migrations and MCP; do not imply deployment or plugin verification occurred when it did not. Preserve existing migration history. Never make the deployment public to enable agent access.
+Cardfolio は個人専用の非公開台帳です。実際のカード番号、セキュリティコード、暗証番号、認証情報、個人の登録先情報、Site ID、本番データをリポジトリやテストに含めないでください。サンプルには架空データだけを使用します。アクセス制御、復元、同時更新、冪等性、外部サービスの更新結果に関する変更には、対象を絞ったテストが必要です。プロビジョニング、マイグレーション、MCP は最新の Sites スキルを確認し、デプロイやプラグインの動作を検証していない場合は、検証済みと記述しないでください。既存のマイグレーション履歴を保持し、エージェントからのアクセスを可能にするためにサイトを公開しないでください。

@@ -49,8 +49,8 @@ if ! flock -n 9; then
   exit 75
 fi
 
-# Catch an installer started outside this helper. Linux exposes both its command
-# line and working directory through /proc, so avoid broad process-name matches.
+# このヘルパー外で起動されたインストーラーも検出する。Linux ではコマンド
+# 行と作業ディレクトリを /proc で確認できるため、広いプロセス名検索は避ける。
 for process in /proc/[0-9]*; do
   pid="${process##*/}"
   [[ "${pid}" != "$$" && "${pid}" != "${PPID}" ]] || continue
@@ -65,7 +65,7 @@ done
 
 lockfile_sha256="$(sha256sum "${SITES_PROJECT_ROOT}/package-lock.json" | awk '{print $1}')"
 use_seeded_cache=0
-# Report seed selection separately from package cache hits or downloads.
+# シードの選択結果は、パッケージキャッシュのヒットやダウンロードと分けて報告する。
 cache_seed_result=seed_unavailable
 seed_cache="${SITES_NPM_CACHE_SEED:-}"
 if [[ -n "${seed_cache}" && -d "${seed_cache}" ]]; then

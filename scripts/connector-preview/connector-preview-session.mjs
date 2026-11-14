@@ -18,14 +18,14 @@ import {
   sessionOptionsSchema,
 } from "./protocol.mjs";
 
-// The agent starts this script through its terminal tool after creating a local
-// Site and selecting connector read actions, following references/app-integrations.md#local-preview:
+// エージェントはローカル Site を作成し、コネクターの読み取り操作を選択した後、
+// references/app-integrations.md#local-preview に従い、ターミナルからこのスクリプトを起動する。
 //   node <site-directory>/scripts/connector-preview/connector-preview-session.mjs <site-directory> <grants.json>
-// During the agent development loop, the Site preview writes requests into a shared folder.
-// This script checks each request with host-binding.mjs, then asks the agent over
-// stdout to call the connector. The agent returns the tool result through stdin,
-// and this script writes it back for the Site. The agent stops the script when
-// previewing ends; neither the browser nor a deployed Site starts this process.
+// エージェントの開発中、Site のプレビューは共有フォルダにリクエストを書き込む。
+// このスクリプトは host-binding.mjs で各リクエストを確認し、標準出力を通じて
+// エージェントにコネクターの呼び出しを依頼する。エージェントが結果を標準入力に返し、
+// このスクリプトが Site に書き戻す。エージェントはプレビュー終了時に
+// スクリプトを停止する。ブラウザやデプロイ済み Site がこのプロセスを起動することはない。
 const { positionals, values } = parseArgs({
   allowPositionals: true,
   options: {
@@ -77,8 +77,8 @@ const binding = createPreviewBinding({
     ...grant,
     async invoke(args) {
       const requestId = randomUUID();
-      // JSON-RPC owns response matching and pending-call cleanup. Do not put an
-      // RPC timeout here: uncertain calls occupy their slot until they settle.
+      // 応答の対応付けと保留中の呼び出しの後片付けは JSON-RPC が行う。
+      // ここに RPC タイムアウトを設けない。不確定な呼び出しは確定まで枠を占有する。
       const response = await rpc.requestAdvanced({
         jsonrpc: "2.0",
         id: requestId,
@@ -99,8 +99,8 @@ const binding = createPreviewBinding({
 });
 await mkdir(directory, { recursive: true, mode: 0o700 });
 try {
-  // One owner per project. A crashed session must be explicitly cleaned up;
-  // never silently take over another agent's connector session.
+  // プロジェクトの所有者は一つ。異常終了したセッションは明示的に片付ける。
+  // 他のエージェントのコネクターセッションを黙って引き継いではならない。
   await writeFile(
     descriptor,
     JSON.stringify({
@@ -133,15 +133,15 @@ async function serve(name) {
       await rename(`${output}.tmp`, output);
     }
   } catch {
-    // A timed-out caller can remove its request. The native call is never retried.
+    // タイムアウトした呼び出し元はリクエストを削除できる。ネイティブ呼び出しは再試行しない。
   } finally {
     await rm(path.join(directory, name), { force: true });
     active.delete(name);
   }
 }
 let scanning = false;
-// The mailbox crosses network namespaces through the shared project directory.
-// Atomic renames keep the reader from seeing partially written messages.
+// メールボックスは共有プロジェクトディレクトリを通じてネットワーク名前空間をまたぐ。
+// アトミックな名前変更により、書き込み途中のメッセージが読まれるのを防ぐ。
 const poller = setInterval(async () => {
   if (closing || scanning) return;
   scanning = true;
