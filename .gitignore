@@ -1,0 +1,45 @@
+# 依存パッケージ
+/node_modules/
+/.pnp
+.pnp.*
+# Yarn を採用する場合は、プロジェクト独自のツールを保持する。
+/.yarn/*
+!/.yarn/patches/
+!/.yarn/plugins/
+!/.yarn/releases/
+!/.yarn/versions/
+
+# 生成されたビルドとフレームワークの状態
+/dist/
+/.next/
+/.vinext/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# テスト出力
+/coverage/
+
+# パッケージマネージャーのログ
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ローカル環境と鍵
+.env*
+.dev.vars*
+*.pem
+
+# チェックアウト固有のツール状態
+/.wrangler/
+/.sites-runtime/
+
+# ワークスペースの準備ファイルと公開用アーカイブ
+/.agents/
+/.codex/
+/outputs/
+/work/
+
+# OS のメタデータ
+.DS_Store
